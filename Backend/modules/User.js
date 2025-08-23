@@ -1,11 +1,11 @@
-import mongoose, { connection } from "mongoose";
+import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
     _id:{type: String , required: true},
     email:{type: String , required: true},
     full_name:{type: String , required: true},
     username:{type: String , unique: true},
-    bio:{typr:String, default:"Hello i'am using panchyat"},
+    bio:{type:String, default:"Hello i'am using panchyat"},
     profile_picture:{type:String,default:''},
     cover_photo:{type:String,default:''},
     location:{type:String,default:''},
