@@ -20,7 +20,6 @@ const RecentMessage = () => {
         <div className='flex flex-col max-h-56 overflow-y-scroll no-scrollbar'>
             { message.map((msg,i)=>(
                 <Link to={`/message/${msg.from_user_id._id}`} key={i} className='flex items-start gap-2 px-2 rounded py-2 hover:bg-slate-200'>
-                    {console.log(msg.from_user_id.profile_picture)}
                     <img src={msg.from_user_id.profile_picture} className='w-8 h-8 rounded-full' alt="" />
                     <div className='w-full'>
                         <div className=' flex justify-between'>

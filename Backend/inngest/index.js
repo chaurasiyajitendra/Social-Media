@@ -1,5 +1,7 @@
 import {Inngest} from 'inngest';
 import User from '../modules/User.js';
+import Connection from '../modules/connection.js';
+import sendEmail from '../config/nodeMailer.js'
 
 export const inngest = new Inngest({id: "panchyatt-app"});
 
@@ -55,4 +57,59 @@ const syncUserDeletion = inngest.createFunction(
     }
 )
 
-export const functions = [ syncUserCreation,syncUserUpdation,syncUserDeletion];
+// Reminder whene new connection request add 
+
+const sendNewConnectionRequestReminder  = inngest.createFunction(
+    {id:"send-new-connection-request-reminder"},
+    {event:"app/connection-request"},
+    async ({event,step}) => {
+        const {connectionId} = event.data;
+        
+        await step.run('send-connection-request-mail',async () =>{
+            const connection = await Connection.findById(connectionId).populate('from_user_id to_user_id');
+            const subject = '👋 New Connection Request';
+            const body =`
+            <div style="font-family: Arial, sans-serif; padding:20px;">
+            <h2>Hi ${connection.to_user_id.full_name},</h2>
+            <p>You have a new connection request from ${connection.from_user_id.full_name} - @${connection.from_user_id.username} </p>
+            <p> Click <a href="${process.env.FRONTEND_URL}/connections" style="color: #10b981 ;">here </a> to accept or reject the request </p>
+            <br/>
+            <p>Thanks, <br/> Pnachyat - Stay Connected </p> 
+            </div>`;
+
+            await sendEmail({
+                to:connection.to_user_id.email,
+                subject,
+                body
+            })
+        })
+
+        const in24Hours = new Date(Date.now() + 20 * 60 * 60 * 1000) 
+        await step.sleepUntil("Wait for 24 hours", in24Hours);
+        await step.run('send-connection-request-reminder', async () => {
+            const connection = await Connection.findById(connectionId).populate('from_user_id to_user_id');
+            if(connection.status === 'accepted'){
+                return {message: 'Already accepted'}
+            }
+
+            const subject = '👋 New Connection Request';
+            const body =`
+            <div style="font-family: Arial, sans-serif; padding:20px;">
+            <h2>Hi ${connection.to_user_id.full_name},</h2>
+            <p>You have a new connection request from ${connection.from_user_id.full_name} - @${connection.from_user_id.username} </p>
+            <p> Click <a href="${process.env.FRONTEND_URL}/connections" style="color: #10b981 ;">here </a> to accept or reject the request </p>
+            <br/>
+            <p>Thanks, <br/> Pnachyat - Stay Connected </p> 
+            </div>`;
+
+            await sendEmail({
+                to:connection.to_user_id.email,
+                subject,
+                body
+            })
+            return {message:"Reminder sent."}
+        })
+    }
+)
+
+export const functions = [ syncUserCreation,syncUserUpdation,syncUserDeletion,sendNewConnectionRequestReminder];
